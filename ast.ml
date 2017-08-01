@@ -8,7 +8,7 @@ type bind = typ * string
 
 type expr =
 	IntLit of int
-	|Bool of bool 
+	|BoolLit of bool 
 	| Id of string
   	| Binop of expr * op * expr
   	| Unop of uop * expr
@@ -51,8 +51,8 @@ let string_of_op = function
 
   let rec string_of_expr = function
     IntLit(l) -> string_of_int l
-  | Bool(true) -> "true"
-  | Bool(false) -> "false"
+  | BoolLit(true) -> "true"
+  | BoolLit(false) -> "false"
   | Id(s) -> s
   | Binop(e1, o, e2) ->
       string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2

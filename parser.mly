@@ -81,8 +81,8 @@ expr_opt:
 
 expr:
     INTLIT         { IntLit($1) }
-  | TRUE             { Bool(true) }
-  | FALSE            { Bool(false) }
+  | TRUE             { BoolLit(true) }
+  | FALSE            { BoolLit(false) }
   | ID               { Id($1) }
   | expr PLUS   expr { Binop($1, Add,   $3) }
   | expr MINUS  expr { Binop($1, Sub,   $3) }
