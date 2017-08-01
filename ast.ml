@@ -1,8 +1,8 @@
-type op = Add | Sub | Mult | Div | Equal | Neq | And | Or
+type op = Add | Sub | Mult | Div | Equal | Neq | And | Or | Lesser |Leq | Greater | Geq | Mod
 
 type uop = Neg | Not
 
-type typ = Int | Bool | Void
+type typ = Int | Bool | Void | String
 
 type bind = typ * string
 
@@ -10,6 +10,7 @@ type expr =
 	IntLit of int
 	|BoolLit of bool 
 	| Id of string
+  | StringLit of string
   	| Binop of expr * op * expr
   	| Unop of uop * expr
   	| Assign of string * expr

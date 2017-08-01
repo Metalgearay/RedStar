@@ -10,10 +10,12 @@ let ir_dump (globals,functions) =
 	and i8_t = L.i8_type context
 	and il_t = L.i1_type context
 	and void_t = L.void_type context in 
-
+	let string_t = L.pointer_type i8_t
+in 
 	let resolve_type = function
 	A.Int -> i32_t
 	|A.Bool -> il_t
+	|A.String -> string_t
 	|A.Void -> void_t in
 
 	let global_vars =
@@ -38,6 +40,7 @@ let ir_dump (globals,functions) =
 		let (the_fun, _) = StringMap.find fdecl.A.fname function_decls in
 		let builder= L.builder_at_end context (L.entry_block the_fun) in
 		let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+		let string_format_str = L.build_global_stringptr "%s\n" "fmt" builder in
 
 		let local_vars = 
 			let add_formal m (t,n) p = L.set_value_name n p;
@@ -57,11 +60,17 @@ let ir_dump (globals,functions) =
 							with Not_found -> StringMap.find n global_vars 
 			in 
 
+	 let string_create s builder =
+          let str = L.build_global_stringptr s "temp" builder
+        in
+        L.build_in_bounds_gep str [|L.const_int i32_t 0|] "temps" builder
+		in
 			let rec exper builder = function
 			A.IntLit i -> L.const_int i32_t i 
 			|A.BoolLit b -> L.const_int il_t (if b then 1 else 0)
 			|A.Noexpr -> L.const_int i32_t 0
 			|A.Id s -> L.build_load (lookup s) s builder 
+			|A.StringLit s -> string_create s builder 
 			|A.Binop (e1,op,e2) ->
 			let e1' = exper builder e1 
 			and e2' = exper builder e2 in
@@ -74,6 +83,11 @@ let ir_dump (globals,functions) =
 	  		| A.Or      -> L.build_or
 	  		| A.Equal   -> L.build_icmp L.Icmp.Eq
 	  		| A.Neq     -> L.build_icmp L.Icmp.Ne
+	  		| A.Lesser    -> L.build_icmp L.Icmp.Slt
+	  		| A.Leq     -> L.build_icmp L.Icmp.Sle
+	  		| A.Greater -> L.build_icmp L.Icmp.Sgt
+	  		| A.Geq     -> L.build_icmp L.Icmp.Sge
+	  		| A.Mod 	-> L.build_srem
 			) e1' e2' "tmp" builder
 			|A.Unop (op, e) ->
 			let e' = exper builder e in
@@ -83,9 +97,10 @@ let ir_dump (globals,functions) =
 			
 			|A.Assign(s,e) -> let e' = exper builder e in
 						ignore(L.build_store e' (lookup s ) builder); e'
-			|A.Call ("wordsOfMarx",[e]) | A.Call("truths_of_stalin",[e]) ->
-			L.build_call printf_func [|int_format_str; (exper builder e)|]
-			"printf" builder 
+			|A.Call ("numbersOfMarx",[e]) -> 
+			L.build_call printf_func [|int_format_str; (exper builder e)|] "printf" builder 
+			|A.Call ("wordsOfMarx",[e]) -> 
+				L.build_call printf_func [|string_format_str; (exper builder e)|] "printf" builder 
 			|A.Call (f,act) ->
 				let (fdef,fdecl) = StringMap.find f function_decls in
 				let actuals = List.rev(List.map (exper builder)(List.rev act)) in
